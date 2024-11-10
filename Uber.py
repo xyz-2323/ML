@@ -8,7 +8,56 @@ from sklearn.ensemble import RandomForestRegressor
 import numpy as np
 
 # Load your data (assuming it's already cleaned)
-# data = pd.read_csv('path_to_your_data.csv')  # Replace with your actual data path
+data = pd.read_csv(r"C:\Users\Admin\Documents\ML PRACTICALS\uber.csv")
+data
+
+data.head()
+data.info()
+data.columns
+
+data=data.drop(['Unnamed: 0'], axis=1)
+data=data.drop(['key'], axis=1)
+data.head()
+data.shape
+data.dtypes
+data.isnull().sum()
+
+data['dropoff_longitude'].fillna(value=data['dropoff_longitude'].mean(), inplace=True)
+data['dropoff_latitude'].fillna(value=data['dropoff_latitude'].mean(), inplace=True)
+
+
+data.pickup_datetime=pd.to_datetime(data.pickup_datetime, errors='coerce')
+data= data.assign(hour = data.pickup_datetime.dt.hour,
+             day= data.pickup_datetime.dt.day,
+             month = data.pickup_datetime.dt.month,
+             year = data.pickup_datetime.dt.year,
+             dayofweek = data.pickup_datetime.dt.dayofweek)
+data=data.drop(['pickup_datetime'], axis=1)
+data.head()
+
+
+
+#2 identify outliers
+data.plot(kind = "box",subplots = True,layout = (7,2),figsize=(15,20)) 
+
+#Using the InterQuartile Range to fill the values
+def remove_outlier(data1 , col):
+    Q1 = data1[col].quantile(0.25)
+    Q3 = data1[col].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_whisker = Q1-1.5*IQR
+    upper_whisker = Q3+1.5*IQR
+    data1[col] = np.clip(data1[col] , lower_whisker , upper_whisker)
+    return data1
+
+def treat_outliers_all(data1, col_list):
+    for col in col_list:
+        data1 = remove_outlier(data1, col)
+    return data1
+
+# Applying outlier treatment to all columns in the dataset
+data = treat_outliers_all(data, data.columns)
+data.plot(kind = "box",subplots = True,layout = (7,2),figsize=(15,20))
 
 # Step 1: Correlation Heatmap
 corr = data.corr()
