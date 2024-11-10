@@ -1,21 +1,14 @@
 import pandas as pd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-import plotly.express as px
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
 
-# Load the dataset
-df = pd.read_csv('sales_data_sample.csv', encoding='unicode_escape', parse_dates=['ORDERDATE'])
+df=pd.read_csv(r"C:\Users\Admin\Documents\ML PRACTICALS\sales_data_sample.csv",encoding='latin1')
 
-# Display the first few rows
-print(df.head())
+df.head
 
-# Check for missing values
-print(df.isnull().sum())
+df.isnull().sum()
 
-# Drop unnecessary columns
+df.dtypes
+
 df_drop = [
     'ADDRESSLINE1', 'ADDRESSLINE2', 'POSTALCODE', 'CITY', 'TERRITORY', 
     'PHONE', 'STATE', 'CONTACTFIRSTNAME', 'CONTACTLASTNAME', 'CUSTOMERNAME', 
@@ -23,82 +16,100 @@ df_drop = [
 ]
 df = df.drop(df_drop, axis=1)
 
-# Check the shape of the DataFrame
-print(df.shape)
 
-# Check for any remaining missing values
-print(df.isna().sum())
+df.head()
 
-# Function to create bar plots
-def barplot_visualization(x):
-    fig = plt.Figure(figsize=(12, 6))
-    fig = px.bar(x=df[x].value_counts().index, y=df[x].value_counts(), color=df[x].value_counts().index, height=600)
-    fig.show()
 
-# Visualize COUNTRY and STATUS
-barplot_visualization('COUNTRY')
-barplot_visualization('STATUS')
+df.dtypes
 
-# Drop unbalanced feature
-df.drop(columns=['STATUS'], axis=1, inplace=True)
-print('Columns resume:', df.shape[1])
+df['ORDERDATE'] = pd.to_datetime(df['ORDERDATE'], errors='coerce')
+df['YEAR'] = df['ORDERDATE'].dt.year
+df['MONTH'] = df['ORDERDATE'].dt.month
+df['DAY'] = df['ORDERDATE'].dt.day
+df.head()
 
-# Visualize PRODUCTLINE and DEALSIZE
-barplot_visualization('PRODUCTLINE')
-barplot_visualization('DEALSIZE')
+df=df.drop(["ORDERDATE"],axis=1)
 
-# Prepare data by creating dummy variables
-def dummies(x):
-    dummy = pd.get_dummies(df[x])
-    df.drop(columns=x, inplace=True)
-    return pd.concat([df, dummy], axis=1)
 
-df = dummies('COUNTRY')
-df = dummies('PRODUCTLINE')
-df = dummies('DEALSIZE')
+from sklearn.preprocessing import LabelEncoder
 
-# Display the updated DataFrame
+# Initialize the LabelEncoder
+label_encoder = LabelEncoder()
+
+# List of columns to encode
+columns_to_encode = ['STATUS', 'PRODUCTLINE', 'COUNTRY', 'DEALSIZE']
+
+# Apply label encoding to each specified column
+for column in columns_to_encode:
+    df[column] = label_encoder.fit_transform(df[column])
+
+# Display the first few rows to verify encoding
 print(df.head())
 
-# Convert PRODUCTCODE to categorical codes
+
 df['PRODUCTCODE'] = pd.Categorical(df['PRODUCTCODE']).codes
+df.head()
 
-# Drop unnecessary date-related columns
-df.drop('ORDERDATE', axis=1, inplace=True)
-df.drop('QTR_ID', axis=1, inplace=True)
 
-# Check the shape after dropping columns
-print(df.shape)
-
-# Use K-Means algorithm for clustering
+from sklearn.preprocessing import StandardScaler
 scaler = StandardScaler()
-df_scaled = scaler.fit_transform(df)
+df = scaler.fit_transform(df)
 
-# Determine the optimal number of clusters using inertia
-scores = []
-range_values = range(1, 15)
-for i in range_values:
-    kmeans = KMeans(n_clusters=i, n_init=10)  # Set n_init to suppress warning
-    kmeans.fit(df_scaled)
-    scores.append(kmeans.inertia_)
 
-# Plot the inertia scores
-plt.figure(figsize=(12, 6))
-plt.plot(range_values, scores, marker='o')
-plt.title('K-Means Clustering: Inertia vs Number of Clusters')
+
+from sklearn.cluster import KMeans
+wcss = []  # Initialize an empty list to store WCSS values
+for i in range(1, 11):  # Loop over a range of cluster numbers from 1 to 10
+    kmeans = KMeans(n_clusters=i, init='k-means++', random_state=42)  # Initialize KMeans with i clusters
+    kmeans.fit(df)  # Fit KMeans to the scaled data
+    wcss.append(kmeans.inertia_)  # Append the WCSS (inertia) to the list
+
+
+
+
+import matplotlib.pyplot as plt  # Correct import for plotting
+
+# Plotting the Elbow Method
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, 11), wcss, marker='o', linestyle='-')
+plt.title('Elbow Method for Optimal K')
 plt.xlabel('Number of Clusters')
-plt.ylabel('Inertia')
-plt.xticks(range_values)
-plt.grid()
+plt.ylabel('WCSS')
 plt.show()
 
-# Optional: Fit the KMeans model with the optimal number of clusters (choose based on the plot)
+
 optimal_k = 5  # Replace with the chosen number of clusters based on the inertia plot
 kmeans = KMeans(n_clusters=optimal_k, n_init=10)
-kmeans.fit(df_scaled)
+kmeans.fit(df)
 
-# Add the cluster labels to the original DataFrame
+
+
+
+import pandas as pd
+
+# If df is a NumPy array, convert it to a DataFrame
+df = pd.DataFrame(df)
+
+# Now reset the index and assign the cluster labels
+df = df.reset_index(drop=True)
+
+# Assign the cluster labels to the 'Cluster' column
 df['Cluster'] = kmeans.labels_
 
-# Display the first few rows of the DataFrame with cluster labels
+# Check the result
 print(df.head())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
