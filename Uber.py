@@ -82,7 +82,8 @@ data['dist_travel_km'] = distance_transform(data['pickup_longitude'].to_numpy(),
 # Step 3: Simplified Linear Regression
 
 # Simplified feature set: focusing on the most important ones (distance and hour)
-x = data[['dist_travel_km', 'hour']]
+#linear regression
+x = data.drop('fare_amount', axis=1)
 y = data['fare_amount']
 
 # Splitting data into training and test sets
